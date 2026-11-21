@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>توصيل عدن</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef3f2;--sf:#fff;--tx:#12302f;--mt:#5d7473;--pr:#0d5c63;--pt:#fff;--ac:#e8a317;--bd:#d3dedc;--ok:#1b7f4b;--no:#b3261e}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1b1b;--sf:#162828;--tx:#e6f0ee;--mt:#93aeab;--pr:#3fb7bf;--pt:#06201f;--bd:#264240;--ok:#55c98a;--no:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Cairo,Tahoma,sans-serif;line-height:1.7}
+header{background:var(--pr);color:var(--pt);padding:14px 16px 0;position:sticky;top:0;z-index:5}
+h1{margin:0 0 6px;font-size:22px;font-weight:800}
+nav{display:flex;gap:4px}
+nav button{flex:1;background:transparent;border:0;color:var(--pt);opacity:.7;font:600 14px Cairo,Tahoma,sans-serif;padding:9px 0;border-bottom:3px solid transparent;cursor:pointer}
+nav button.on{opacity:1;border-color:var(--ac)}
+main{max-width:640px;margin:0 auto;padding:14px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+h2{font-size:17px;margin:0 0 10px}
+label{display:block;font-size:13px;color:var(--mt);margin:8px 0 2px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:400 15px Cairo,Tahoma,sans-serif}
+button.b{background:var(--pr);color:var(--pt);border:0;border-radius:8px;padding:10px 16px;font:600 15px Cairo,Tahoma,sans-serif;cursor:pointer;margin-top:10px}
+button.b.g{background:transparent;color:var(--pr);border:1px solid var(--pr)}
+button.b.r{background:var(--no);color:#fff}
+button.b.y{background:var(--ok);color:#fff}
+button.b:disabled{opacity:.4}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--ac);outline-offset:1px}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+.tag{display:inline-block;font-size:12px;padding:1px 10px;border-radius:99px;background:var(--bd);color:var(--tx)}
+.tag.ok{background:var(--ok);color:#fff}.tag.no{background:var(--no);color:#fff}.tag.wt{background:var(--ac);color:#2a1d00}
+.mt{color:var(--mt);font-size:13px}
+.fee{font-size:26px;font-weight:800;color:var(--pr)}
+.chat{max-height:340px;overflow-y:auto;padding:4px}
+.m{max-width:85%;margin:6px 0;padding:8px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--bd)}
+.m.me{margin-inline-start:auto;background:var(--pr);color:var(--pt);border-color:var(--pr)}
+.m img{max-width:100%;border-radius:8px;display:block;margin-top:4px}
+.m small{display:block;opacity:.75;font-size:11px}
+.steps{display:flex;gap:3px;margin:8px 0}.steps i{flex:1;height:5px;border-radius:3px;background:var(--bd)}.steps i.on{background:var(--ok)}
+.fb{display:inline-block;cursor:pointer;padding:9px 12px;border:1px dashed var(--pr);border-radius:8px;color:var(--pr);font-size:14px;font-weight:600}
+.fb input{display:none}
+</style>
+</head>
+<body>
+<header><h1>🛵 توصيل عدن</h1><nav id="nav"></nav></header>
+<main id="app"></main>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({apiKey:"AIzaSyBQNk0ZkChcGvBQnfryNUSHNVS0lkOzHIs",authDomain:"tawseel-aden.firebaseapp.com",projectId:"tawseel-aden",storageBucket:"tawseel-aden.firebasestorage.app",messagingSenderId:"174721038783",appId:"1:174721038783:web:bf8d834c217540ffb4c90a"});
+const A=firebase.auth(),DB=firebase.firestore();
+DB.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+const ADMIN='admin@tawseel-aden.com';
+const CATS=['مطاعم','صيدلية','سوبرماركت','خضار وفواكه','غاز وماء','طلب خاص'];
+const AREAS=['المنصورة','الشيخ عثمان','كريتر','المعلا','التواهي','خور مكسر','دار سعد','البريقة','الشعب','إنماء'];
+const COORD={'كريتر':[12.779,45.037],'المعلا':[12.786,45.009],'التواهي':[12.785,44.988],'خور مكسر':[12.825,45.03],'المنصورة':[12.824,44.988],'الشيخ عثمان':[12.865,44.99],'دار سعد':[12.91,44.995],'البريقة':[12.78,44.95],'الشعب':[12.83,44.95],'إنماء':[12.855,44.97]};
+const RATE=500;
+const ST={new:'بانتظار سائق',accepted:'جاري الشراء',confirmed:'في الطريق',received:'بانتظار الدفع',done:'تم الدفع'};
+const STEPS=['new','accepted','confirmed','received','done'];
+let U=null,ui={role:'c',open:null},D={cme:null,dme:null,oc:[],od:[],on:[],orders:[],drivers:[],cust:[],msgs:[],err:''},unsub=[],nl=null,mu=null,myGps=null,lastDl=0;
+const e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=id=>document.getElementById(id),v=id=>($(id)?.value||'').trim();
+const money=n=>Number(n).toLocaleString('en-US')+' ريال';
+const tm=t=>new Date(t).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+const isAdmin=()=>U&&U.email===ADMIN;
+const arr=s=>s.docs.map(d=>({id:d.id,...d.data()})),one=s=>s.exists?{id:s.id,...s.data()}:null;
+const fail=er=>alert('تعذّر التنفيذ: '+(er.code||er.message));
+function img(input,cb){const f=input.files[0];if(!f)return cb('');const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,480/i.width),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.6))};i.onerror=()=>cb('');i.src=r.result};r.readAsDataURL(f)}
+const fileIn=(id,l)=>`<label class="fb">${l}<input type="file" accept="image/*" id="${id}"></label>`;
+/* ---- الاتصال ---- */
+A.onAuthStateChanged(u=>{if(!u){A.signInAnonymously().catch(er=>{D.err='تعذّر الاتصال ('+er.code+'). فعّل Anonymous في Authentication.';render()});return}U=u;D.err='';listen();render()});
+function listen(){
+ unsub.forEach(f=>f());unsub=[];if(nl){nl();nl=null}
+ Object.assign(D,{oc:[],od:[],on:[],orders:[],cme:null,dme:null});
+ const on=(q,fn)=>unsub.push(q.onSnapshot(s=>{fn(s);rr()},er=>console.warn(er.code)));
+ if(isAdmin()){on(DB.collection('orders'),s=>D.orders=arr(s));on(DB.collection('drivers'),s=>D.drivers=arr(s));on(DB.collection('customers'),s=>D.cust=arr(s));return}
+ on(DB.doc('customers/'+U.uid),s=>D.cme=one(s));
+ on(DB.doc('drivers/'+U.uid),s=>{D.dme=one(s);const ok=D.dme&&D.dme.st==='approved';
+  if(ok&&!nl)nl=DB.collection('orders').where('st','==','new').onSnapshot(x=>{D.on=arr(x);rr()},er=>console.warn(er.code));
+  if(!ok&&nl){nl();nl=null;D.on=[]}});
+ on(DB.collection('orders').where('c','==',U.uid),s=>D.oc=arr(s));
+ on(DB.collection('orders').where('d','==',U.uid),s=>D.od=arr(s));
+}
+const AO=()=>{if(isAdmin())return D.orders;const m=new Map();[...D.oc,...D.od,...D.on].forEach(o=>m.set(o.id,o));return[...m.values()]};
+const byT=(a,b)=>(b.t||0)-(a.t||0);
+function go(r){ui.role=r;closeO();render()}
+function openO(id){ui.open=id;D.msgs=[];if(mu)mu();mu=DB.collection('orders/'+id+'/msgs').orderBy('t').onSnapshot(s=>{D.msgs=arr(s);rr()},er=>console.warn(er.code));render()}
+function closeO(){if(mu){mu();mu=null}ui.open=null;render()}
+function rr(){const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&$('app').contains(a))return;render()}
+function render(){
+ $('nav').innerHTML=[['c','عميل'],['d','سائق'],['a','أدمن']].map(([k,t])=>`<button class="${ui.role===k?'on':''}" onclick="go('${k}')">${t}</button>`).join('');
+ let h=D.err?`<div class="card"><span class="tag no">${e(D.err)}</span></div>`:'';
+ if(!U&&!D.err)h+='<p class="mt">جاري الاتصال...</p>';
+ else if(U){
+  if(isAdmin()&&ui.role!=='a')h+='<div class="card"><p>أنت داخل بحساب الأدمن.</p><button class="b" onclick="go(\'a\')">لوحة الأدمن</button></div>';
+  else h+=ui.open?detail():ui.role==='c'?cust():ui.role==='d'?drv():adm();
+ }
+ $('app').innerHTML=h;
+ const ch=document.querySelector('.chat');if(ch)ch.scrollTop=ch.scrollHeight;if($('kmv'))calc();
+}
+/* ---- المسافة ---- */
+function hv(a,b){const r=x=>x*Math.PI/180,dl=r(b[0]-a[0]),dn=r(b[1]-a[1]),h=Math.sin(dl/2)**2+Math.cos(r(a[0]))*Math.cos(r(b[0]))*Math.sin(dn/2)**2;return 12742*Math.asin(Math.sqrt(h))}
+function calc(){if(!$('op'))return 0;const a=COORD[v('op')],b=myGps||COORD[v('oa')],k=Math.max(1,Math.ceil(hv(a,b)*1.3*2)/2);$('kmv').textContent=k;$('fee').textContent=money(k*RATE);return k}
+function gps(){const s=$('gs');if(!navigator.geolocation){s.textContent='الجهاز لا يدعم تحديد الموقع';return}s.textContent='جاري التحديد...';navigator.geolocation.getCurrentPosition(p=>{const g=[p.coords.latitude,p.coords.longitude];if(hv(g,[12.82,44.99])>40){myGps=null;s.textContent='موقعك خارج عدن، سيُستخدم وسط المنطقة'}else{myGps=g;s.textContent='تم تحديد موقعك ✅'}calc()},()=>{myGps=null;s.textContent='تعذّر التحديد، سيُستخدم وسط المنطقة';calc()},{timeout:8000})}
+/* ---- العميل ---- */
+function cust(){
+ const me=D.cme;
+ if(!me)return `<div class="card"><h2>تسجيل عميل جديد</h2>
+ <label>الاسم</label><input id="cn"><label>رقم الجوال</label><input id="cp" inputmode="tel"><label>رقم البطاقة</label><input id="ci" inputmode="numeric">
+ <label>المنطقة</label><select id="ca">${AREAS.map(a=>`<option>${a}</option>`).join('')}</select><label>العنوان / وصف الموقع</label><input id="cl">
+ <div style="margin-top:10px">${fileIn('cph','📷 صورتك')}</div><button class="b" onclick="regC()">تسجيل</button></div>`;
+ if(me.off)return '<div class="card"><span class="tag no">حسابك موقوف</span><p>تواصل مع الإدارة.</p></div>';
+ const mine=D.oc.slice().sort(byT);
+ return `<div class="card"><h2>طلب جديد</h2>
+ <label>القسم</label><select id="oc">${CATS.map(a=>`<option>${a}</option>`).join('')}</select>
+ <label>منطقة المحل (الاستلام)</label><select id="op" onchange="calc()">${AREAS.map(a=>`<option>${a}</option>`).join('')}</select>
+ <label>منطقة التوصيل</label><select id="oa" onchange="myGps=null;$('gs').textContent='';calc()">${AREAS.map(a=>`<option ${a===me.area?'selected':''}>${a}</option>`).join('')}</select>
+ <label>ماذا تريد؟</label><textarea id="ot" rows="3" placeholder="مثال: 2 كيلو طماطم، 1 كيلو بصل"></textarea>
+ <div class="row" style="align-items:center"><button class="b g" style="margin:6px 0;flex:0 0 auto" onclick="gps()">📍 استخدم موقعي الحالي</button><span class="mt" id="gs"></span></div>
+ <div class="mt">المسافة المحسوبة: <b id="kmv">-</b> كم · أجرة التوصيل = المسافة × ${RATE} ريال</div><div class="fee" id="fee">-</div>
+ <div class="mt">الدفع عند الاستلام: لا تحوّل شيئاً إلا بعد وصول طلبك.</div>
+ <button class="b" onclick="mkO()">إرسال الطلب</button></div>
+ <h2>طلباتي</h2>${mine.map(oCard).join('')||'<p class="mt">لا توجد طلبات بعد.</p>'}`;
+}
+function regC(){
+ if(!v('cn')||!v('cp')||!v('ci'))return alert('أكمل الاسم والجوال ورقم البطاقة');
+ img($('cph'),p=>DB.doc('customers/'+U.uid).set({name:v('cn'),phone:v('cp'),idn:v('ci'),area:v('ca'),loc:v('cl'),photo:p,off:false,t:Date.now()}).catch(fail))}
+function mkO(){
+ const k=calc(),m=D.cme;if(!v('ot')||!(k>0))return alert('اكتب الطلب');
+ DB.collection('orders').add({c:U.uid,d:null,cname:m.name,cphone:m.phone,cloc:m.loc||'',cat:v('oc'),pick:v('op'),area:v('oa'),dest:myGps||COORD[v('oa')],text:v('ot'),km:k,fee:k*RATE,st:'new',cok:false,t:Date.now()}).then(()=>{myGps=null;render()}).catch(fail)}
+const oCard=o=>`<div class="card" onclick="openO('${o.id}')" style="cursor:pointer"><div class="row"><b>${e(o.cat)} · ${e(o.area)}</b><span class="tag ${o.st==='done'?'ok':'wt'}" style="flex:0">${ST[o.st]}</span></div><div class="mt">${o.km} كم · التوصيل ${money(o.fee)} · ${tm(o.t)}</div><div>${e(o.text)}</div></div>`;
+/* ---- السائق ---- */
+function drv(){
+ const me=D.dme;
+ if(!me)return `<div class="card"><h2>التسجيل كسائق</h2><p class="mt">لن تعمل إلا بعد موافقة الأدمن.</p>
+ <label>الاسم</label><input id="dn"><label>رقم الجوال</label><input id="dp" inputmode="tel"><label>رقم البطاقة</label><input id="di" inputmode="numeric">
+ <label>رقم لوحة المركبة</label><input id="dl"><label>نوع المركبة</label><select id="dv"><option>سيارة</option><option>دراجة نارية</option><option>دراجة</option></select>
+ <label>رقم حساب بنك القطيبي</label><input id="db" inputmode="numeric">
+ <div class="row" style="margin-top:10px">${fileIn('dph','📷 صورتك')}${fileIn('did','🪪 صورة البطاقة')}</div><button class="b" onclick="regD()">إرسال للمراجعة</button></div>`;
+ if(me.st!=='approved')return `<div class="card"><h2>حالة حسابك</h2><span class="tag ${me.st==='pending'?'wt':'no'}">${{pending:'قيد المراجعة',rejected:'مرفوض',suspended:'موقوف'}[me.st]}</span><p class="mt">${me.st==='pending'?'سيظهر لك العمل بعد موافقة الأدمن.':'تواصل مع الإدارة.'}</p></div>`;
+ return `<div class="card"><b>أهلاً ${e(me.name)}</b> <span class="tag ok">معتمد</span></div>
+ <h2>طلبات متاحة</h2>${D.on.slice().sort(byT).map(oCard).join('')||'<p class="mt">لا توجد طلبات متاحة الآن.</p>'}
+ <h2>طلباتي</h2>${D.od.slice().sort(byT).map(oCard).join('')||'<p class="mt">لم تقبل أي طلب بعد.</p>'}`;
+}
+function regD(){
+ if(!v('dn')||!v('dp')||!v('di')||!v('dl')||!v('db'))return alert('أكمل جميع الحقول');
+ img($('dph'),p=>img($('did'),c=>DB.doc('drivers/'+U.uid).set({name:v('dn'),phone:v('dp'),idn:v('di'),plate:v('dl'),veh:v('dv'),bank:v('db'),photo:p,idimg:c,st:'pending',t:Date.now()}).catch(fail)))}
+/* ---- التتبع ---- */
+function share(id){if(!navigator.geolocation)return alert('الجهاز لا يدعم تحديد الموقع');navigator.geolocation.watchPosition(p=>{if(Date.now()-lastDl<8000)return;lastDl=Date.now();DB.doc('orders/'+id).update({dl:[p.coords.latitude,p.coords.longitude,Date.now()]}).catch(()=>{})},()=>alert('تعذّر تحديد موقعك. فعّل الموقع في الجهاز.'),{enableHighAccuracy:true})}
+function trk(o){if(o.st!=='confirmed')return '';let body='<p class="mt">السائق لم يشارك موقعه بعد.</p>';
+ if(o.dl&&o.dest){const k=hv(o.dl,o.dest),c=Math.cos(o.dest[0]*Math.PI/180),dx=(o.dl[1]-o.dest[1])*c,dy=o.dl[0]-o.dest[0],m=Math.max(Math.abs(dx),Math.abs(dy),1e-4),X=150+dx/m*110,Y=80-dy/m*60;
+ body=`<svg viewBox="0 0 300 160" width="100%" role="img" aria-label="موقع السائق"><rect width="300" height="160" rx="10" fill="var(--bg)" stroke="var(--bd)"/><line x1="${X}" y1="${Y}" x2="150" y2="80" stroke="var(--pr)" stroke-width="2" stroke-dasharray="5 4"/><circle cx="150" cy="80" r="9" fill="var(--ac)"/><circle cx="${X}" cy="${Y}" r="9" fill="var(--pr)"/><text x="150" y="104" text-anchor="middle" font-size="12" fill="var(--tx)">موقع التسليم</text><text x="${X}" y="${Y-14}" text-anchor="middle" font-size="12" fill="var(--tx)">السائق</text></svg><div><b>باقي ~${k.toFixed(1)} كم</b> <span class="mt">· آخر تحديث ${tm(o.dl[2])}</span></div>`}
+ return `<div class="card"><h2>📍 تتبع السائق</h2>${body}</div>`}
+/* ---- تفاصيل الطلب ---- */
+function detail(){
+ const o=AO().find(x=>x.id===ui.open);if(!o){ui.open=null;return ''}
+ const R=ui.role,has=k=>D.msgs.some(m=>m.k===k),i=STEPS.indexOf(o.st);let act='';
+ if(R==='d'){
+  if(o.st==='new')act=`<button class="b" onclick="acc('${o.id}')">قبول الطلب</button>`;
+  if(o.st==='accepted')act=`<div class="row">${fileIn('gp','📦 صوّر الأغراض')}${fileIn('ip','🧾 صوّر الفاتورة')}</div><button class="b y" ${o.cok?'':'disabled'} onclick="stp('${o.id}','confirmed')">تم التأكيد</button>${o.cok?'':'<div class="mt">ينتظر موافقة العميل على الصور.</div>'}`;
+  if(o.st==='confirmed')act=`<div class="mt">اذهب للتوصيل وشارك موقعك ليتابعك العميل. الدفع عند الاستلام.</div><button class="b" onclick="share('${o.id}')">📍 شارك موقعي</button>`;
+  if(o.st==='received')act=`<div class="mt">العميل استلم. بانتظار حوالته على حسابك.</div><button class="b y" onclick="stp('${o.id}','done')">استلمت المبلغ</button>`;
+ }
+ if(R==='c'){
+  if(o.st==='accepted')act=`<button class="b y" ${has('goods')&&has('inv')&&!o.cok?'':'disabled'} onclick="cok('${o.id}')">تم، هذا هو طلبي</button>${has('goods')&&has('inv')?'':'<div class="mt">ينتظر صورة الأغراض وصورة الفاتورة من السائق.</div>'}`;
+  if(o.st==='confirmed')act=`<div class="mt">السائق في الطريق إليك. لا تحوّل شيئاً الآن، الدفع بعد الاستلام.</div><button class="b y" onclick="stp('${o.id}','received')">تم الاستلام</button>`;
+  if(o.st==='received')act=`<div class="card" style="background:var(--bg)"><b>حوّل الآن ${money(o.fee)} + قيمة الفاتورة</b><div>حساب القطيبي للسائق: <b>${e(o.dbank)}</b></div><div class="mt">${e(o.dname)} · ${e(o.dphone)}</div>${fileIn('pp','📷 ارفع صورة الحوالة')}<div class="mt">التحويل من تطبيق البنك مباشرة، والتطبيق لا يتدخل فيه.</div></div>`;
+ }
+ const kl={goods:'صورة الأغراض',inv:'الفاتورة',pay:'صورة الحوالة'};
+ return `<button class="b g" style="margin:0 0 10px" onclick="closeO()">رجوع</button>
+ <div class="card"><div class="row"><b>${e(o.cat)} · ${e(o.area)}</b><span class="tag ${o.st==='done'?'ok':'wt'}" style="flex:0">${ST[o.st]}</span></div>
+ <div class="steps">${STEPS.map((s,j)=>`<i class="${j<=i?'on':''}"></i>`).join('')}</div>
+ <div>${e(o.text)}</div><div class="mt">من ${e(o.pick)} · ${o.km} كم · التوصيل ${money(o.fee)}</div>
+ <div class="mt">العميل: ${e(o.cname)}${R!=='c'&&o.d?' · '+e(o.cphone)+' · '+e(o.cloc):''}${o.d?' · السائق: '+e(o.dname)+' ('+e(o.dveh)+' '+e(o.dplate)+')':''}</div></div>
+ ${trk(o)}
+ <div class="card"><h2>المحادثة</h2><div class="chat">${D.msgs.map(m=>`<div class="m ${m.f===R?'me':''}">${e(m.t)}${m.img?`<img src="${m.img}" alt="">`:''}<small>${m.f==='d'?'السائق':'العميل'} · ${tm(m.t0||m.ts)}${m.k?' · '+kl[m.k]:''}</small></div>`).join('')||'<p class="mt">لا توجد رسائل.</p>'}</div>
+ ${o.st!=='new'&&o.st!=='done'&&R!=='a'?`<div class="row" style="margin-top:8px;align-items:center"><input id="mt" placeholder="اكتب رسالة" style="flex:3"><button class="b" style="flex:1;margin:0" onclick="say('${o.id}')">إرسال</button></div>${fileIn('cp2','📷 أرسل صورة')}`:''}
+ ${act}</div>`;
+}
+const upd=(id,x)=>DB.doc('orders/'+id).update(x).catch(fail);
+const msg=(id,m)=>DB.collection('orders/'+id+'/msgs').add({t:'',...m,f:ui.role,ts:Date.now()}).catch(fail);
+async function acc(id){const m=D.dme;await upd(id,{d:U.uid,dname:m.name,dphone:m.phone,dveh:m.veh,dplate:m.plate,dbank:m.bank,st:'accepted'});msg(id,{t:'تم قبول طلبك، سأبدأ الشراء الآن.'})}
+async function cok(id){await upd(id,{cok:true});msg(id,{t:'تمام، هذا هو طلبي ✅'})}
+async function stp(id,s){await upd(id,{st:s});msg(id,{t:{confirmed:'تم التأكيد، أنا في الطريق إليك. الدفع عند الاستلام.',received:'تم الاستلام ✅ سأحوّل لك الآن.',done:'استلمت المبلغ. شكراً لك ✅'}[s]})}
+function say(id){const t=v('mt'),f=$('cp2').files[0];if(!t&&!f)return;img($('cp2'),p=>{msg(id,{t,img:p});render()})}
+document.addEventListener('change',ev=>{const t=ev.target,k={gp:'goods',ip:'inv',pp:'pay'}[t.id];if(!ui.open||t.type!=='file'||!k)return;img(t,p=>{if(p)msg(ui.open,{img:p,k})})});
+/* ---- الأدمن ---- */
+function adm(){
+ if(!isAdmin())return `<div class="card"><h2>دخول الأدمن</h2><label>البريد</label><input id="ae" type="email" dir="ltr"><label>كلمة المرور</label><input id="ap" type="password" dir="ltr"><button class="b" onclick="alogin()">دخول</button></div>`;
+ const st={pending:'قيد المراجعة',approved:'معتمد',rejected:'مرفوض',suspended:'موقوف'};
+ const dv=x=>`<div class="card"><div class="row"><b>${e(x.name)}</b><span class="tag ${x.st==='approved'?'ok':x.st==='pending'?'wt':'no'}" style="flex:0">${st[x.st]}</span></div>
+ <div class="mt">${e(x.phone)} · بطاقة ${e(x.idn)} · ${e(x.veh)} ${e(x.plate)} · القطيبي ${e(x.bank)}</div>
+ <div class="row" style="margin-top:6px">${x.photo?`<img src="${x.photo}" style="max-width:90px;border-radius:8px" alt="">`:''}${x.idimg?`<img src="${x.idimg}" style="max-width:140px;border-radius:8px" alt="">`:''}</div>
+ <div class="row">${x.st==='pending'?`<button class="b y" onclick="ds('${x.id}','approved')">موافقة</button><button class="b r" onclick="ds('${x.id}','rejected')">رفض</button>`:x.st==='approved'?`<button class="b r" onclick="ds('${x.id}','suspended')">إيقاف</button>`:`<button class="b y" onclick="ds('${x.id}','approved')">إعادة تفعيل</button>`}</div></div>`;
+ return `<h2>السائقون (${D.drivers.length})</h2>${D.drivers.map(dv).join('')||'<p class="mt">لا يوجد سائقون مسجلون.</p>'}
+ <h2>العملاء (${D.cust.length})</h2>${D.cust.map(x=>`<div class="card"><div class="row"><b>${e(x.name)}</b><span class="tag ${x.off?'no':'ok'}" style="flex:0">${x.off?'موقوف':'نشط'}</span></div><div class="mt">${e(x.phone)} · ${e(x.area)}</div><button class="b ${x.off?'y':'r'}" onclick="cs('${x.id}',${!x.off})">${x.off?'إعادة تفعيل':'إيقاف'}</button></div>`).join('')||'<p class="mt">لا يوجد عملاء.</p>'}
+ <h2>كل الطلبات (${D.orders.length})</h2>${D.orders.slice().sort(byT).map(oCard).join('')||'<p class="mt">لا توجد طلبات.</p>'}
+ <button class="b g" onclick="A.signOut()">تسجيل خروج الأدمن</button>`;
+}
+const alogin=()=>A.signInWithEmailAndPassword(v('ae'),$('ap').value).catch(()=>alert('بيانات الدخول غير صحيحة'));
+const ds=(id,s)=>DB.doc('drivers/'+id).update({st:s}).catch(fail);
+const cs=(id,off)=>DB.doc('customers/'+id).update({off}).catch(fail);
+render();
+</script>
+</body>
+</html>
